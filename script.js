@@ -47,9 +47,75 @@ const gameboard = (() => {
     board.forEach(renderRow);
     div.innerHTML = html;
   }
+  const markSquare = (row, col, marker) => {
+    console.log(board[row][col])
+    board[row][col] = marker;
+    render();
+  }
+  const reset = () => {
+    board.forEach((value, index, arr) => arr[index] = ["","",""])
+    render();
+  }
+  const emptySquare = (row, col) => {
+    if (board[row][col] == "") { return true }
+    return false
+  }
+  //note decided to put this in gameboard rather than game since gameboard has better access to each square
+  const checkVictory = () => {
+    //check each row and col
+    for (let i = 0; i < 3; i++) {
+      if ( (board[i][0] != "" && board[i][1] == board[i][0] && board[i][2] == board[i][0])
+        || (board[0][i] != "" && board[1][i] == board[0][i] && board[2][i] == board[0][i]) ) {
+        //winner
+        return true
+      }
+    }
+    //check both diagonals
+    if ( (board[0][0] != "" && board[1][1] == board[0][0] && board[2][2] == board[0][0])
+      || (board[0][2] != "" && board[1][1] == board[0][2] && board[2][0] == board[0][2]) ) {
+      //winner
+        return true
+    } 
 
-  return {render}
+    return false
+  }
+
+  return {board, render, markSquare, reset, emptySquare, checkVictory}
 
 })();
 
+const Game = (player1, player2) => {
+  //const player1 = player1;
+  //const player2 = player2;
+  let currentPlayer = player1;
+  
+  const makeMove = (row, col) => {
+    if (gameboard.emptySquare(row, col)) {
+      let marker = (currentPlayer == player1 ? "X" : "O");
+      gameboard.markSquare(row, col, marker);
+      if (gameboard.checkVictory()) {
+        console.log(`${currentPlayer.getName()} wins!`)
+      }
+
+    }
+    else {
+      console.log("illegal move")
+    }
+
+  }
+  return {makeMove}
+}
+
+const Player = (name) => {
+  let wins = 0;
+  let loses = 0;
+  let played = 0;
+  const getName = (name) => {return name}
+  
+  return {getName}
+}
+
+let p1 = Player("p1");
+let p2 = Player("p2");
+let game = Game(p1, p2);
 gameboard.render();
