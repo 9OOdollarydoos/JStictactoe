@@ -1,23 +1,7 @@
 // Project instructions:
-// store the gameboard as an array inside of a Gameboard object
-// Your players are also going to be stored in objects… and you’re probably going to want an object to control the flow of the game itself.
-// Your main goal here is to have as little global code as possible. Try tucking everything away inside of a module or factory. 
-// Rule of thumb: if you only ever need ONE of something (gameBoard, displayController), use a module. 
-// If you need multiples of something (players!), create them with factories.
+// https://www.theodinproject.com/paths/full-stack-ruby-on-rails/courses/javascript/lessons/tic-tac-toe-javascript
 
-// Set up your HTML and write a JavaScript function that will render the contents of the gameboard array to the webpage 
-// (for now you can just manually fill in the array with "X"s and "O"s)
-
-// Build the functions that allow players to add marks to a specific spot on the board, 
-// and then tie it to the DOM, letting players click on the gameboard to place their marker. 
-// Don’t forget the logic that keeps players from playing in spots that are already taken!
-
-// Think carefully about where each bit of logic should reside. 
-// Each little piece of functionality should be able to fit in the game, player or gameboard objects.. 
-// but take care to put them in “logical” places. Spending a little time brainstorming here can make your life much easier later!
-
-// Build the logic that checks for when the game is over! Should check for 3-in-a-row and a tie.
-
+// todo:
 // Clean up the interface to allow players to put in their names, include a button to start/restart the game 
 // and add a display element that congratulates the winning player!
 
@@ -29,7 +13,7 @@
 const gameboard = (() => {
   //board represents the game board incl. its current state. It is a simple array with 3 elements that represent each row
   //those rows then have three squares each 
-  const board = [["","X",""],["O","",""],["","","X"]];
+  const board = [["","",""],["","",""],["","",""]];
   const div = document.getElementById("gameboard");
   const render = () => {
     let html = "";
@@ -50,7 +34,6 @@ const gameboard = (() => {
     div.innerHTML = html;
   }
   const markSquare = (row, col, marker) => {
-    console.log(board[row][col])
     board[row][col] = marker;
     render();
   }
@@ -82,7 +65,16 @@ const gameboard = (() => {
     return false
   }
 
-  return {board, render, markSquare, reset, emptySquare, checkVictory}
+  const checkDraw = () => {
+    for (let i = 0; i < 3; i++) {
+      for (let n = 0; n < 3; n++) {
+        if (board[i][n] == "") {return false} //i.e. if any spaces left, not a draw
+      }
+    }
+    return true;
+  }
+
+  return {board, render, markSquare, reset, emptySquare, checkVictory, checkDraw}
 
 })();
 
@@ -95,7 +87,7 @@ const Game = (player1, player2) => {
   
   const playRound = (row, col) => {
     if (gameOver) {
-      console.log("game over already!")
+      displayController.message("game over already!")
     }
     else if (gameboard.emptySquare(row, col)) {
       let marker = (currentPlayer == player1 ? "X" : "O");
@@ -103,26 +95,38 @@ const Game = (player1, player2) => {
       if (gameboard.checkVictory()) {
         endGame();
       }
+      else if (gameboard.checkDraw()) {
+        endGame(true);
+      }
       else {
         //update play
         let tempCurrentPlayer = nextPlayer;
         nextPlayer = currentPlayer;
         currentPlayer = tempCurrentPlayer;
+        displayController.message(`${currentPlayer.getName()}'s turn`)
       }
 
     }
     else {
-      console.log("illegal move")
+      displayController.message(`illegal move! ${currentPlayer.getName()}'s turn`)
     }
 
   }
-  const endGame = () => {
-    console.log(`${currentPlayer.getName()} wins!`);
-    gameOver = true;
-    currentPlayer.wins ++;
-    currentPlayer.played ++;
-    nextPlayer.loses ++;
-    nextPlayer.played ++;
+  const endGame = (draw = false) => {
+    if (draw) {
+      displayController.message(`Its a tie!`);
+      gameOver = true;
+      currentPlayer.played ++;
+      nextPlayer.played ++;
+    }
+    else {
+      displayController.message(`${currentPlayer.getName()} wins!`);
+      gameOver = true;
+      currentPlayer.wins ++;
+      currentPlayer.played ++;
+      nextPlayer.loses ++;
+      nextPlayer.played ++;
+    }
   }
 
   return {playRound}
@@ -138,12 +142,41 @@ const Player = (name) => {
 }
 
 const displayController = (() => {
-  let p1 = Player("p1");
-  let p2 = Player("p2");
+  let p1 = Player("Player 1");
+  let p2 = Player("Player 2");
   let currentGame = Game(p1, p2);
-  gameboard.render();
+  let messageElement = document.querySelector("#messages");
+  
+  
+  const displaySetup = () => {
+    let btn = document.getElementById("startGameBtn")
+    btn.addEventListener("click", setup);
+  }
 
-  return {currentGame, p1}
+  const setup = () => {
+    let p1name = document.getElementById("player-1").value
+    let p2name = document.getElementById("player-1").value
+    if (p1name == "") {p1name = "Player 1"}
+    if (p2name == "") {p2name = "Player 2"}
+    p1 = Player(p1name);
+    p2 = Player(p2name);
+    
+    document.querySelector("#setup").style.display = "none";
+    newGame();
+  }
+
+  const newGame = () => {
+    currentGame = Game(p1, p2);
+    gameboard.render();
+    message(`${p1.getName()}'s turn`)
+  }
+
+  const message = (text) => {
+    messageElement.innerHTML = text
+  }
+
+  
+  return {currentGame, newGame, setup, displaySetup, message, p1}
 
 })();
-
+displayController.displaySetup();
