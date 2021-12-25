@@ -34,16 +34,18 @@ const gameboard = (() => {
   const render = () => {
     let html = "";
     const renderRow = (value, index) => {
+      const renderSquare = (value, index) => { 
+        html += `<div id="sq-${index}" class="square" onclick="displayController.currentGame.playRound(${currentRow},${index})">
+          <span>${value}</span>
+          </div>`
+      };
+      
+      let currentRow = index; //make available to renderSquare function
       html += `<div id="row-${index}" class="row">`;
       value.forEach(renderSquare);
       html += `</div>`;
     }
-    const renderSquare = (value, index) => { 
-      html += `<div id="sq-${index}" class="square">
-        <span>${value}</span>
-        </div>`
-    };
-
+    
     board.forEach(renderRow);
     div.innerHTML = html;
   }
@@ -74,7 +76,7 @@ const gameboard = (() => {
     if ( (board[0][0] != "" && board[1][1] == board[0][0] && board[2][2] == board[0][0])
       || (board[0][2] != "" && board[1][1] == board[0][2] && board[2][0] == board[0][2]) ) {
       //winner
-        return true
+      return true
     } 
 
     return false
@@ -88,13 +90,24 @@ const Game = (player1, player2) => {
   //const player1 = player1;
   //const player2 = player2;
   let currentPlayer = player1;
+  let nextPlayer = player2;
+  let gameOver = false;
   
-  const makeMove = (row, col) => {
-    if (gameboard.emptySquare(row, col)) {
+  const playRound = (row, col) => {
+    if (gameOver) {
+      console.log("game over already!")
+    }
+    else if (gameboard.emptySquare(row, col)) {
       let marker = (currentPlayer == player1 ? "X" : "O");
       gameboard.markSquare(row, col, marker);
       if (gameboard.checkVictory()) {
-        console.log(`${currentPlayer.getName()} wins!`)
+        endGame();
+      }
+      else {
+        //update play
+        let tempCurrentPlayer = nextPlayer;
+        nextPlayer = currentPlayer;
+        currentPlayer = tempCurrentPlayer;
       }
 
     }
@@ -103,19 +116,34 @@ const Game = (player1, player2) => {
     }
 
   }
-  return {makeMove}
+  const endGame = () => {
+    console.log(`${currentPlayer.getName()} wins!`);
+    gameOver = true;
+    currentPlayer.wins ++;
+    currentPlayer.played ++;
+    nextPlayer.loses ++;
+    nextPlayer.played ++;
+  }
+
+  return {playRound}
 }
 
 const Player = (name) => {
   let wins = 0;
   let loses = 0;
   let played = 0;
-  const getName = (name) => {return name}
+  const getName = () => {return name}
   
   return {getName}
 }
 
-let p1 = Player("p1");
-let p2 = Player("p2");
-let game = Game(p1, p2);
-gameboard.render();
+const displayController = (() => {
+  let p1 = Player("p1");
+  let p2 = Player("p2");
+  let currentGame = Game(p1, p2);
+  gameboard.render();
+
+  return {currentGame, p1}
+
+})();
+
