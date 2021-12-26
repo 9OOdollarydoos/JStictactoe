@@ -5,6 +5,8 @@
 // Clean up the interface to allow players to put in their names, include a button to start/restart the game 
 // and add a display element that congratulates the winning player!
 
+// player 1 shouldnt always go first
+
 // Optional - If you’re feeling ambitious create an AI so that a player can play against the computer!
 // Start by just getting the computer to make a random legal move.
 // Once you’ve gotten that, work on making the computer smart. 
@@ -85,6 +87,12 @@ const Game = (player1, player2) => {
   let nextPlayer = player2;
   let gameOver = false;
   
+  const reset = () => {
+    gameOver = false;
+    currentPlayer = player1;
+    nextPlayer = player2;
+  }
+
   const playRound = (row, col) => {
     if (gameOver) {
       displayController.message("game over already!")
@@ -127,9 +135,10 @@ const Game = (player1, player2) => {
       nextPlayer.loses ++;
       nextPlayer.played ++;
     }
+    displayController.updatePlayers();
   }
 
-  return {playRound}
+  return {playRound, reset}
 }
 
 const Player = (name) => {
@@ -137,8 +146,12 @@ const Player = (name) => {
   let loses = 0;
   let played = 0;
   const getName = () => {return name}
+  const updateName = (str) => {
+    if(str != "") {name = str}
+    displayController.updatePlayers();
+  }
   
-  return {getName}
+  return {getName, updateName, wins, loses, played}
 }
 
 const displayController = (() => {
@@ -148,26 +161,23 @@ const displayController = (() => {
   let messageElement = document.querySelector("#messages");
   
   
-  const displaySetup = () => {
-    let btn = document.getElementById("startGameBtn")
-    btn.addEventListener("click", setup);
-  }
-
   const setup = () => {
-    let p1name = document.getElementById("player-1").value
-    let p2name = document.getElementById("player-1").value
-    if (p1name == "") {p1name = "Player 1"}
-    if (p2name == "") {p2name = "Player 2"}
-    p1 = Player(p1name);
-    p2 = Player(p2name);
-    
-    document.querySelector("#setup").style.display = "none";
-    newGame();
+    let btn = document.getElementById("p1-name-btn");
+    btn.addEventListener("click", function(){ p1.updateName(document.getElementById("p1-name-new").value) });
+    btn = document.getElementById("p2-name-btn");
+    btn.addEventListener("click", function(){ p2.updateName(document.getElementById("p2-name-new").value) });
+    btn = document.getElementById("new-game-btn");
+    btn.addEventListener("click", newGame);
+    gameboard.render();
+    updatePlayers();
   }
 
   const newGame = () => {
-    currentGame = Game(p1, p2);
+    //currentGame = Game(p1, p2); for some reason this doesnt work - made a reset game method instead.
+    currentGame.reset();
+    gameboard.reset();
     gameboard.render();
+    updatePlayers();
     message(`${p1.getName()}'s turn`)
   }
 
@@ -175,8 +185,18 @@ const displayController = (() => {
     messageElement.innerHTML = text
   }
 
-  
-  return {currentGame, newGame, setup, displaySetup, message, p1}
+  const updatePlayers = () => {
+    document.querySelector("#p1-name").innerHTML = p1.getName();
+    document.querySelector("#p1-wins").innerHTML = `Wins: ${p1.wins}`;
+    document.querySelector("#p1-loses").innerHTML = `Loses: ${p1.loses}`;
+    document.querySelector("#p1-played").innerHTML = `Played: ${p1.played}`;
+    document.querySelector("#p2-name").innerHTML = p2.getName();
+    document.querySelector("#p2-wins").innerHTML = `Wins: ${p2.wins}`;
+    document.querySelector("#p2-loses").innerHTML = `Loses: ${p2.loses}`;
+    document.querySelector("#p2-played").innerHTML = `Played ${p2.played}`;  
+  }
+
+  setup();
+  return {currentGame, newGame, message, updatePlayers}
 
 })();
-displayController.displaySetup();
