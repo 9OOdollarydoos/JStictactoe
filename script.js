@@ -21,7 +21,7 @@ const gameboard = (() => {
     let html = "";
     const renderRow = (value, index) => {
       const renderSquare = (value, index) => { 
-        html += `<div id="sq-${index}" class="square" onclick="displayController.currentGame.playRound(${currentRow},${index})">
+        html += `<div id="sq-${index}" class="square" onclick="displayController.getCurrentGame().playRound(${currentRow},${index})">
           <span>${value}</span>
           </div>`
       };
@@ -87,12 +87,6 @@ const Game = (player1, player2) => {
   let nextPlayer = player2;
   let gameOver = false;
   
-  const reset = () => {
-    gameOver = false;
-    currentPlayer = player1;
-    nextPlayer = player2;
-  }
-
   const playRound = (row, col) => {
     if (gameOver) {
       displayController.message("game over already!")
@@ -138,7 +132,7 @@ const Game = (player1, player2) => {
     displayController.updatePlayers();
   }
 
-  return {playRound, reset}
+  return {playRound}
 }
 
 const Player = (name) => {
@@ -160,6 +154,7 @@ const displayController = (() => {
   let currentGame = Game(p1, p2);
   let messageElement = document.querySelector("#messages");
   
+  const getCurrentGame = () => currentGame;
   
   const setup = () => {
     let btn = document.getElementById("p1-name-btn");
@@ -173,8 +168,7 @@ const displayController = (() => {
   }
 
   const newGame = () => {
-    //currentGame = Game(p1, p2); for some reason this doesnt work - made a reset game method instead.
-    currentGame.reset();
+    currentGame = Game(p1, p2); 
     gameboard.reset();
     gameboard.render();
     updatePlayers();
@@ -197,6 +191,6 @@ const displayController = (() => {
   }
 
   setup();
-  return {currentGame, newGame, message, updatePlayers}
+  return {getCurrentGame, newGame, message, updatePlayers}
 
 })();
